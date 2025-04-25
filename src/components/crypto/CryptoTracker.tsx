@@ -5,6 +5,14 @@ import { fetchCryptoData } from '@/redux/cryptoSlice';
 import { Card } from '@/components/ui/card';
 import { ArrowUp, ArrowDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
 
 export const CryptoTracker = () => {
   const dispatch = useAppDispatch();
@@ -62,6 +70,17 @@ export const CryptoTracker = () => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   };
 
+  const formatLargeNumber = (value: number) => {
+    if (value >= 1_000_000_000) {
+      return `$${(value / 1_000_000_000).toFixed(2)}B`;
+    } else if (value >= 1_000_000) {
+      return `$${(value / 1_000_000).toFixed(2)}M`;
+    } else if (value >= 1_000) {
+      return `$${(value / 1_000).toFixed(2)}K`;
+    }
+    return `$${value.toFixed(2)}`;
+  };
+
   return (
     <section id="crypto-tracker" className="py-20 px-4 bg-crypto-darkest">
       <div className="container mx-auto">
@@ -80,98 +99,103 @@ export const CryptoTracker = () => {
         <div className="overflow-x-auto">
           <div className="min-w-[1000px]">
             <div className="glass-card p-6">
-              <div className="grid grid-cols-12 gap-2 text-sm font-medium text-gray-400 mb-4 px-4">
-                <div className="col-span-1">#</div>
-                <div className="col-span-2">Name</div>
-                <div className="col-span-1">Price</div>
-                <div className="col-span-1 text-center">1h %</div>
-                <div className="col-span-1 text-center">24h %</div>
-                <div className="col-span-1 text-center">7d %</div>
-                <div className="col-span-2">Market Cap</div>
-                <div className="col-span-1">Volume (24h)</div>
-                <div className="col-span-2">Circulating Supply</div>
-              </div>
-
-              {status === 'loading' && data.length === 0 && (
-                <div className="text-center py-10">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-crypto-purple"></div>
-                  <p className="mt-4 text-gray-400">Loading crypto data...</p>
-                </div>
-              )}
-
-              {data.length > 0 && (
-                <div className="space-y-2">
-                  {data.map((crypto) => (
-                    <div 
-                      key={crypto.id}
-                      className="grid grid-cols-12 gap-2 bg-white/5 hover:bg-white/10 transition-colors rounded-lg p-4 items-center"
-                    >
-                      <div className="col-span-1 text-gray-300">{crypto.market_cap_rank}</div>
-                      <div className="col-span-2 flex items-center">
-                        <img 
-                          src={crypto.image} 
-                          alt={crypto.name} 
-                          className="w-6 h-6 mr-2"
-                        />
-                        <div>
-                          <p className="font-medium text-white">{crypto.name}</p>
-                          <p className="text-xs text-gray-400">{crypto.symbol.toUpperCase()}</p>
-                        </div>
-                      </div>
-                      <div className="col-span-1 font-medium text-white">
-                        {formatCurrency(crypto.current_price)}
-                      </div>
-                      <div className={`col-span-1 text-center ${crypto.price_change_percentage_1h_in_currency >= 0 ? 'text-crypto-green' : 'text-crypto-red'}`}>
-                        <div className="flex items-center justify-center">
-                          {crypto.price_change_percentage_1h_in_currency >= 0 ? 
-                            <ArrowUp className="w-3 h-3 mr-1" /> : 
-                            <ArrowDown className="w-3 h-3 mr-1" />
-                          }
-                          {formatPercentage(crypto.price_change_percentage_1h_in_currency)}
-                        </div>
-                      </div>
-                      <div className={`col-span-1 text-center ${crypto.price_change_percentage_24h_in_currency >= 0 ? 'text-crypto-green' : 'text-crypto-red'}`}>
-                        <div className="flex items-center justify-center">
-                          {crypto.price_change_percentage_24h_in_currency >= 0 ? 
-                            <ArrowUp className="w-3 h-3 mr-1" /> : 
-                            <ArrowDown className="w-3 h-3 mr-1" />
-                          }
-                          {formatPercentage(crypto.price_change_percentage_24h_in_currency)}
-                        </div>
-                      </div>
-                      <div className={`col-span-1 text-center ${crypto.price_change_percentage_7d_in_currency >= 0 ? 'text-crypto-green' : 'text-crypto-red'}`}>
-                        <div className="flex items-center justify-center">
-                          {crypto.price_change_percentage_7d_in_currency >= 0 ? 
-                            <ArrowUp className="w-3 h-3 mr-1" /> : 
-                            <ArrowDown className="w-3 h-3 mr-1" />
-                          }
-                          {formatPercentage(crypto.price_change_percentage_7d_in_currency)}
-                        </div>
-                      </div>
-                      <div className="col-span-2 text-gray-200">
-                        ${formatNumber(crypto.market_cap)}
-                      </div>
-                      <div className="col-span-1 text-gray-200">
-                        ${formatNumber(crypto.total_volume)}
-                      </div>
-                      <div className="col-span-2 text-gray-200">
-                        <div className="flex items-center">
-                          <span className="mr-1">{formatNumber(crypto.circulating_supply)}</span>
-                          <span className="text-xs text-gray-400">{crypto.symbol.toUpperCase()}</span>
-                        </div>
-                        {crypto.max_supply && (
-                          <div className="mt-1 w-full bg-gray-700 rounded-full h-1.5">
-                            <div 
-                              className="bg-gradient-to-r from-crypto-purple to-crypto-blue h-1.5 rounded-full" 
-                              style={{ width: `${(crypto.circulating_supply / crypto.max_supply) * 100}%` }}
-                            ></div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b border-white/10">
+                    <TableHead className="text-gray-400">#</TableHead>
+                    <TableHead className="text-gray-400">Name</TableHead>
+                    <TableHead className="text-gray-400">Price</TableHead>
+                    <TableHead className="text-center text-gray-400">1h %</TableHead>
+                    <TableHead className="text-center text-gray-400">24h %</TableHead>
+                    <TableHead className="text-center text-gray-400">7d %</TableHead>
+                    <TableHead className="text-gray-400">Market Cap</TableHead>
+                    <TableHead className="text-gray-400">Volume (24h)</TableHead>
+                    <TableHead className="text-gray-400">Circulating Supply</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {status === 'loading' && data.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-10">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-crypto-purple"></div>
+                        <p className="mt-4 text-gray-400">Loading crypto data...</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    data.map((crypto) => (
+                      <TableRow 
+                        key={crypto.id}
+                        className="border-b border-white/5 hover:bg-white/5"
+                      >
+                        <TableCell className="text-gray-300">{crypto.market_cap_rank}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <img 
+                              src={crypto.image} 
+                              alt={crypto.name} 
+                              className="w-6 h-6 mr-2"
+                            />
+                            <div>
+                              <p className="font-medium text-white">{crypto.name}</p>
+                              <p className="text-xs text-gray-400">{crypto.symbol.toUpperCase()}</p>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                        </TableCell>
+                        <TableCell className="font-medium text-white">
+                          {formatCurrency(crypto.current_price)}
+                        </TableCell>
+                        <TableCell className={`text-center ${crypto.price_change_percentage_1h_in_currency >= 0 ? 'text-crypto-green' : 'text-crypto-red'}`}>
+                          <div className="flex items-center justify-center">
+                            {crypto.price_change_percentage_1h_in_currency >= 0 ? 
+                              <ArrowUp className="w-3 h-3 mr-1" /> : 
+                              <ArrowDown className="w-3 h-3 mr-1" />
+                            }
+                            {formatPercentage(crypto.price_change_percentage_1h_in_currency)}
+                          </div>
+                        </TableCell>
+                        <TableCell className={`text-center ${crypto.price_change_percentage_24h_in_currency >= 0 ? 'text-crypto-green' : 'text-crypto-red'}`}>
+                          <div className="flex items-center justify-center">
+                            {crypto.price_change_percentage_24h_in_currency >= 0 ? 
+                              <ArrowUp className="w-3 h-3 mr-1" /> : 
+                              <ArrowDown className="w-3 h-3 mr-1" />
+                            }
+                            {formatPercentage(crypto.price_change_percentage_24h_in_currency)}
+                          </div>
+                        </TableCell>
+                        <TableCell className={`text-center ${crypto.price_change_percentage_7d_in_currency >= 0 ? 'text-crypto-green' : 'text-crypto-red'}`}>
+                          <div className="flex items-center justify-center">
+                            {crypto.price_change_percentage_7d_in_currency >= 0 ? 
+                              <ArrowUp className="w-3 h-3 mr-1" /> : 
+                              <ArrowDown className="w-3 h-3 mr-1" />
+                            }
+                            {formatPercentage(crypto.price_change_percentage_7d_in_currency)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-200">
+                          {formatLargeNumber(crypto.market_cap)}
+                        </TableCell>
+                        <TableCell className="text-gray-200">
+                          {formatLargeNumber(crypto.total_volume)}
+                        </TableCell>
+                        <TableCell className="text-gray-200">
+                          <div className="flex items-center">
+                            <span className="mr-1">{formatNumber(crypto.circulating_supply)}</span>
+                            <span className="text-xs text-gray-400">{crypto.symbol.toUpperCase()}</span>
+                          </div>
+                          {crypto.max_supply && (
+                            <div className="mt-1 w-full bg-gray-700 rounded-full h-1.5">
+                              <div 
+                                className="bg-gradient-to-r from-crypto-purple to-crypto-blue h-1.5 rounded-full" 
+                                style={{ width: `${(crypto.circulating_supply / crypto.max_supply) * 100}%` }}
+                              ></div>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
 
               {status === 'failed' && (
                 <Card className="bg-red-900/20 border-red-700 p-4 text-center">
